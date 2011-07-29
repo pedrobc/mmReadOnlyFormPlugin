@@ -52,6 +52,18 @@ class mmWidgetFormDateReadOnly extends sfWidgetFormInput
    */
   public function render($name, $value = null, $attributes = array(), $errors = array())
   {
+    if(is_array($value))
+    {
+      if(isset($value['year']) && isset($value['month']) && isset($value['day']))
+      {
+
+        $value = $value['year'] . '/' . $value['month'] . '/' . $value['day'];
+      }
+      else
+      {
+        throw new InvalidArgumentException('For array values please specify year, month and day keys');
+      }
+    }
     return parent::render($name . '_readonly', format_date($value), array_merge(array('disabled' => 'disabled'), $attributes), $errors) . $this->renderTag('input', array('type' => 'hidden', 'name' => $name, 'value' => $value, 'readonly' => 'readonly'));
   }
 }
