@@ -16,7 +16,7 @@
  * @author     Fabien Potencier <fabien.potencier@symfony-project.com>
  * @version    SVN: $Id: sfWidgetFormInputCheckbox.class.php 21908 2009-09-11 12:06:21Z fabien $
  */
-class mmWidgetFormInputReadOnly extends sfWidgetFormInput
+class mmWidgetFormDateReadOnly extends sfWidgetFormInput
 {
   /**
    * Constructor.
@@ -54,9 +54,4 @@ class mmWidgetFormInputReadOnly extends sfWidgetFormInput
   {
     return parent::render($name . '_readonly', format_date($value), array_merge(array('disabled' => 'disabled'), $attributes), $errors) . $this->renderTag('input', array('type' => 'hidden', 'name' => $name, 'value' => $value, 'readonly' => 'readonly'));
   }
-
-/*
-    return parent::render($name . '_readonly', null, array_merge(array('disabled' => 'disabled'), $attributes), $errors) .
-           $this->renderTag('input', array('type' => 'hidden', 'name' => $name, 'value' => $value, 'readonly' => 'readonly'));
-  } */
 }

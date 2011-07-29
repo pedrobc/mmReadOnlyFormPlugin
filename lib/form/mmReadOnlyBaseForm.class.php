@@ -177,7 +177,7 @@ class mmReadOnlyBaseForm extends sfFormSymfony
     }
     elseif($this->widgetSchema[$fieldName] instanceof sfWidgetFormDate)
     {
-      $this->widgetSchema[$fieldName] = new mmWidgetFormInputReadOnly();
+      $this->widgetSchema[$fieldName] = new mmWidgetFormDateReadOnly();
     }
     else
     {
