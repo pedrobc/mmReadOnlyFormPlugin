@@ -9,9 +9,9 @@
  */
 class mmReadOnlyBaseForm extends sfFormSymfony
 {
-  protected
-    $readOnlyFields = array()
-  , $notVisibleFields = array()
+  private
+    $_readOnlyFields = array()
+  , $_notVisibleFields = array()
   ;
 
   /**
@@ -41,123 +41,126 @@ class mmReadOnlyBaseForm extends sfFormSymfony
 
   /**
    *
-   * postConfigure handles the readOnly Fields and the NonVisibleFields
+   * Empty method so that readOnlyFields and notVisibleFields can be configured
    */
   protected function postConfigure()
   {
-    $this->handleNotVisibleFields();
-    $this->handleReadOnlyFields();
   }
   /**
    *
    * Unset the widget and its validator
    */
-  protected  function handleNotVisibleFields()
+  private function _handleNotVisibleField($fieldName)
   {
-    $notVisible = $this->getNotVisibleFields();
-    foreach($notVisible as $widget)
+    if($this->getWidgetSchema()->offsetExists($fieldName))
     {
-      if($this->getWidgetSchema()->offsetExists($widget))
-      {
-        $this->getWidgetSchema()->offsetUnset($widget);
-      }
-      if($this->getValidatorSchema()->offsetExists($widget))
-      {
-        $this->getValidatorSchema()->offsetUnset($widget);
-      }
+      $this->getWidgetSchema()->offsetUnset($fieldName);
+    }
+    if($this->getValidatorSchema()->offsetExists($fieldName))
+    {
+      $this->getValidatorSchema()->offsetUnset($fieldName);
     }
   }
   /**
    *
-   * Mark the widgets as readonly
+   * Mark the widgets as readonly &&
+   * creates a validator if appropriate
    */
-  protected function handleReadOnlyFields()
+  private function _handleReadOnlyField($fieldName)
   {
-    $readOnly = $this->getReadOnlyFields();
-    foreach($readOnly as $widget)
+    if($this->getWidgetSchema()->offsetExists($fieldName))
     {
-      if($this->getWidgetSchema()->offsetExists($widget))
-      {
-        $this->setWidgetReadOnly($widget);
-      }
-    }
-  }
-  /**
-   *
-   * Gets an array with the name of all the widgets that will be unset
-   * Overload this method to unset returned widgets
-   *
-   * @return array
-   */
-  protected function getNotVisibleFields()
-  {
-    return $this->notVisibleFields;
-  }
-  /**
-   *
-   * Gets an array with the name of all the widgets that will be set as readonly
-   * Overload this method to make returned widgets readonly
-   *
-   * @return array
-   */
-  protected function getReadOnlyFields()
-  {
-    return $this->readOnlyFields;
-  }
-
-  /**
-   * Returns true if the form is valid.
-   *
-   * It returns false if the form is not bound.
-   *
-   * @return Boolean true if the form is valid, false otherwise
-   */
-  public function isValid()
-  {
-    return parent::isValid() && $this->_isReadOnlyModified();
-  }
-
-  /**
-   * Checks if readonly fields have been changed and if so, put them as they were
-   *
-   *
-   * @return true so && above never fails because of ths method
-   */
-  protected function _isReadOnlyModified()
-  {
-    foreach($this->getReadOnlyFields() as $name)
-    {
+      $this->_setWidgetReadOnly($fieldName);
       try {
-        $originalValue = $this->getObject()->$name;
+        $this->validatorSchema[$fieldName] = new mmValidatorReadOnly(array(
+          'value' => $this->getObject()->$fieldName
+        ));
       } catch(Doctrine_Record_UnknownPropertyException $e) {
-        continue; //It's a "virtual" field
+        //It's a "virtual" field. No need to validate it since it's not going to be saved in db
       } catch(Exception $e) {
         throw new Exception(__FILE__.':'.__LINE__.' encountered an exception: ' . $e->getMessage());
       }
-      if($this->values[$name] != $this->getObject()->$name)
-      {
-        $this->values[$name] = $this->getObject()->$name;
-      }
     }
-    return true;
+  }
+
+  /**
+   *
+   * Adds a field to the notVisibleFields array
+   *
+   * @return void
+   */
+  public function addNotVisibleField($fieldName)
+  {
+    if(!is_string($fieldName))
+    {
+      throw new InvalidArgumentException(__FUNCTION__ . ': Invalid Argument type. Expected String, got ' . gettype($fieldName));
+    }
+    $this->_handleNotVisibleField($fieldName);
+  }
+
+  /**
+   *
+   * Adds an array of fields to the notVisibleFields array
+   *
+   * @return void
+   */
+  public function addNotVisibleFields(array $fields)
+  {
+    foreach($fields as $fieldName)
+    {
+      $this->_handleNotVisibleField($fieldName);
+    }
+  }
+
+  /**
+   *
+   * Adds a field to the readOnlyFields array
+   *
+   * @return void
+   */
+  public function addReadOnlyField($fieldName)
+  {
+    if(!is_string($fieldName))
+    {
+      throw new InvalidArgumentException(__FUNCTION__ . ': Invalid Argument type. Expected String, got ' . gettype($fieldName));
+    }
+    $this->_handleReadOnlyField($fieldName);
+  }
+
+  /**
+   *
+   * Adds an array of fields to the readOnlyFields array
+   *
+   * @return void
+   */
+  public function addReadOnlyFields(array $fields)
+  {
+    foreach($fields as $fieldName)
+    {
+      $this->_handleReadOnlyField($fieldName);
+    }
   }
 
   /**
    * Sets a widget to readonly.
    * This should really be a method from the widget class itself, but there's no BaseWidget class we can change...
    *
-   * @param string $name The widget name
+   * @param string $fieldName The widget name
    *
    * @return void
    **/
-  public function setWidgetReadOnly($name)
+  private function _setWidgetReadOnly($fieldName)
   {
-    if($this->widgetSchema[$name] instanceof sfWidgetFormChoice)
+    if(!is_string($fieldName))
+    {
+      throw new InvalidArgumentException(__FUNCTION__ . ': Invalid Argument type. Expected String, got ' . gettype($fieldName));
+    }
+    if($this->widgetSchema[$fieldName] instanceof sfWidgetFormChoice)
     {
       $dummy = new mmWidgetFormChoiceReadOnly(array('choices' => array()));
       $avaialbleOptions = array_merge($dummy->getRequiredOptions(), array_keys($dummy->getOptions()));
       unset($dummy);
-      $options = $this->widgetSchema[$name]->getOptions();
+      $options = $this->widgetSchema[$fieldName]->getOptions();
       foreach($options as $k => $v) //remove extra options not supported by mmWidgetFormChoiceReadOnly
       {
         if(! in_array($k, $avaialbleOptions))
@@ -165,42 +168,45 @@ class mmReadOnlyBaseForm extends sfFormSymfony
           unset($options[$k]);
         }
       }
-      $options['choices'] = $this->widgetSchema[$name]->getChoices();
-      $this->widgetSchema[$name] = new mmWidgetFormChoiceReadOnly($options, $this->widgetSchema[$name]->getAttributes());
+      $options['choices'] = $this->widgetSchema[$fieldName]->getChoices();
+      $this->widgetSchema[$fieldName] = new mmWidgetFormChoiceReadOnly($options, $this->widgetSchema[$fieldName]->getAttributes());
     }
-    elseif($this->widgetSchema[$name] instanceof sfWidgetFormInputCheckbox)
+    elseif($this->widgetSchema[$fieldName] instanceof sfWidgetFormInputCheckbox)
     {
-      $this->widgetSchema[$name] = new mmWidgetFormInputCheckboxReadOnly($this->widgetSchema[$name]->getOptions(), $this->widgetSchema[$name]->getAttributes());
+      $this->widgetSchema[$fieldName] = new mmWidgetFormInputCheckboxReadOnly($this->widgetSchema[$fieldName]->getOptions(), $this->widgetSchema[$fieldName]->getAttributes());
     }
-    elseif($this->widgetSchema[$name] instanceof sfWidgetFormDate)
+    elseif($this->widgetSchema[$fieldName] instanceof sfWidgetFormDate)
     {
-      $this->widgetSchema[$name] = new mmWidgetFormInputReadOnly();
+      $this->widgetSchema[$fieldName] = new mmWidgetFormInputReadOnly();
     }
     else
     {
-      $this->widgetSchema[$name]->setAttribute('readonly', 'readonly');
+      $this->widgetSchema[$fieldName]->setAttribute('readonly', 'readonly');
     }
   }
+
   /**
-   * Sets widgets from a form to readonly.
+   * Sets all or defined widgets from a form to readonly.
    * If no widget names are passed, all form is made readonly
    *
    * @param array $fields The widget name
    *
    * @return void
   **/
-
   public function setReadOnly(array $fields = array())
   {
     if(count($fields) == 0) //use all form fields
     {
-      $this->readOnlyFields = $this->widgetSchema->getFields();
+      foreach($this->widgetSchema->getFields() as $fieldName => $w)
+      {
+        $this->_handleReadOnlyField($fieldName);
+      }
     }
 
-    //TODO: Somehow this doesn't work
+    //TODO: Also set embedded forms read-only
     foreach($this->getEmbeddedForms() as $f)
     {
-      $f->readOnlyFields = $f->widgetSchema->getFields();
+      $f->setReadOnly();
     }
   }
 }
