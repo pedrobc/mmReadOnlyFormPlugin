@@ -72,13 +72,14 @@ class mmReadOnlyBaseForm extends sfFormSymfony
     {
       $this->_setWidgetReadOnly($fieldName);
       try {
+        if($this->g)
         $this->validatorSchema[$fieldName] = new mmValidatorReadOnly(array(
           'value' => $this->getObject()->$fieldName
         ));
       } catch(Doctrine_Record_UnknownPropertyException $e) {
         //It's a "virtual" field. No need to validate it since it's not going to be saved in db
       } catch(Exception $e) {
-        throw new Exception(__FILE__.':'.__LINE__.' encountered an exception: ' . $e->getMessage());
+        //throw new Exception(__FILE__.':'.__LINE__.' encountered an exception: ' . $e->getMessage());
       }
     }
   }
