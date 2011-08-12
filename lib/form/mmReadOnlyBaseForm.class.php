@@ -72,7 +72,6 @@ class mmReadOnlyBaseForm extends sfFormSymfony
     {
       $this->_setWidgetReadOnly($fieldName);
       try {
-        if($this->g)
         $this->validatorSchema[$fieldName] = new mmValidatorReadOnly(array(
           'value' => $this->getObject()->$fieldName
         ));
