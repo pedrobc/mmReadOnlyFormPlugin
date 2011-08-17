@@ -19,6 +19,7 @@ class mmValidatorReadOnly extends sfValidatorBase
   protected function configure($options = array(), $messages = array())
   {
     $this->addRequiredOption('value');
+    $this->addRequiredOption('is_new');
     $this->setOption('required', false);
   }
 
@@ -27,7 +28,6 @@ class mmValidatorReadOnly extends sfValidatorBase
    */
   protected function doClean($value)
   {
-    //if($value != $this->getOption('value'))
-    return $this->getOption('value');
+    return $this->getOption('is_new') ? $value : $this->getOption('value');
   }
 }

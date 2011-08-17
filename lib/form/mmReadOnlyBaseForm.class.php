@@ -73,7 +73,8 @@ class mmReadOnlyBaseForm extends sfFormSymfony
       $this->_setWidgetReadOnly($fieldName);
       try {
         $this->validatorSchema[$fieldName] = new mmValidatorReadOnly(array(
-          'value' => $this->getObject()->$fieldName
+          'value' => $this->getObject()->$fieldName,
+		  'is_new' => $this->getObject()->isNew(),
         ));
       } catch(Doctrine_Record_UnknownPropertyException $e) {
         //It's a "virtual" field. No need to validate it since it's not going to be saved in db
