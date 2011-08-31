@@ -71,16 +71,17 @@ class mmReadOnlyBaseForm extends sfFormSymfony
     if($this->getWidgetSchema()->offsetExists($fieldName))
     {
       $this->_setWidgetReadOnly($fieldName);
-      try {
-        $this->validatorSchema[$fieldName] = new mmValidatorReadOnly(array(
-          'value' => $this->getObject()->$fieldName,
-		  'is_new' => $this->getObject()->isNew(),
-        ));
-      } catch(Doctrine_Record_UnknownPropertyException $e) {
-        //It's a "virtual" field. No need to validate it since it's not going to be saved in db
-      } catch(Exception $e) {
-        //throw new Exception(__FILE__.':'.__LINE__.' encountered an exception: ' . $e->getMessage());
+      if($this instanceof sfFormDoctrine && !$this->getObject()->isNew())
+      {
+        $value = $this->getObject()->$fieldName;
       }
+      else
+      {
+        $value = $this->getValue($fieldName);
+      }
+      $this->validatorSchema[$fieldName] = new mmValidatorReadOnly(array(
+        'widget' => $this->validatorSchema[$fieldName]
+      ));
     }
   }
 
@@ -178,7 +179,7 @@ class mmReadOnlyBaseForm extends sfFormSymfony
     }
     elseif($this->widgetSchema[$fieldName] instanceof sfWidgetFormDate)
     {
-      $this->widgetSchema[$fieldName] = new mmWidgetFormDateReadOnly();
+      $this->widgetSchema[$fieldName] = new mmWidgetFormDateReadOnly($this->widgetSchema[$fieldName]->getOptions(), $this->widgetSchema[$fieldName]->getAttributes());
     }
     else
     {
@@ -204,7 +205,6 @@ class mmReadOnlyBaseForm extends sfFormSymfony
       }
     }
 
-    //TODO: Also set embedded forms read-only
     foreach($this->getEmbeddedForms() as $f)
     {
       $f->setReadOnly();
