@@ -18,7 +18,7 @@ class mmValidatorReadOnly extends sfValidatorBase
    */
   protected function configure($options = array(), $messages = array())
   {
-    $this->addRequiredOption('widget');
+    $this->addRequiredOption('value');
     $this->setOption('required', false);
   }
 
@@ -27,6 +27,6 @@ class mmValidatorReadOnly extends sfValidatorBase
    */
   protected function doClean($value)
   {
-    return $this->getOption('widget')->getDefault();
+    return $this->getOption('value');
   }
 }
