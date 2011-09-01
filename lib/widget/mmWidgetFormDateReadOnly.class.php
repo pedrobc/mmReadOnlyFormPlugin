@@ -16,7 +16,7 @@
  * @author     Fabien Potencier <fabien.potencier@symfony-project.com>
  * @version    SVN: $Id: sfWidgetFormInputCheckbox.class.php 21908 2009-09-11 12:06:21Z fabien $
  */
-class mmWidgetFormDateReadOnly extends sfWidgetFormInput
+class mmWidgetFormDateReadOnly extends sfWidgetFormDate
 {
   /**
    * Constructor.
@@ -32,6 +32,7 @@ class mmWidgetFormDateReadOnly extends sfWidgetFormInput
    */
   protected function configure($options = array(), $attributes = array())
   {
+    parent::configure($options, $attributes);
     $this->addRequiredOption('type');
 
     // to maintain BC with symfony 1.2
