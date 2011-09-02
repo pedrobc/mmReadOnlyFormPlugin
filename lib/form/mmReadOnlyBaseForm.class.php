@@ -9,11 +9,6 @@
  */
 class mmReadOnlyBaseForm extends sfFormSymfony
 {
-  private
-    $_readOnlyFields = array()
-  , $_notVisibleFields = array()
-  ;
-
   /**
    * Constructor.
    *
@@ -37,8 +32,6 @@ class mmReadOnlyBaseForm extends sfFormSymfony
 
     $this->addCSRFProtection($this->localCSRFSecret);
     $this->resetFormFields();
-
-    $this->_handleReadOnlyFields();
   }
 
   /**
@@ -68,25 +61,26 @@ class mmReadOnlyBaseForm extends sfFormSymfony
    * Mark the widgets as readonly &&
    * creates a validator if appropriate
    */
-  private function _handleReadOnlyFields()
+  private function _handleReadOnlyFields($fieldName)
   {
-    foreach($this->_readOnlyFields as $fieldName)
+    if($this->getWidgetSchema()->offsetExists($fieldName))
     {
-      if($this->getWidgetSchema()->offsetExists($fieldName))
+      $this->_setWidgetReadOnly($fieldName);
+      if($this instanceof sfFormDoctrine)
       {
-        $this->_setWidgetReadOnly($fieldName);
-        if($this instanceof sfFormDoctrine)
-        {
-          $value = $this->widgetSchema[$fieldName]->getDefault() ? $this->widgetSchema[$fieldName]->getDefault() : $this->getObject()->$fieldName;
-        }
-        else
-        {
-          $value = $this->widgetSchema[$fieldName]->getDefault();
-        }
-        $this->validatorSchema[$fieldName] = new mmValidatorReadOnly(array(
-          'value'   => $value,
-        ));
+          try {
+            $value = !($this->widgetSchema[$fieldName] instanceof sfWidgetFormSchema) && $this->widgetSchema[$fieldName]->getDefault() ? $this->widgetSchema[$fieldName]->getDefault() : $this->getObject()->$fieldName;
+          } catch(Exception $e) {
+            $value = ''; //fallback in case column is not "real"
+          }
       }
+      else
+      {
+        $value = $this->widgetSchema[$fieldName] ? $this->widgetSchema[$fieldName]->getDefault() : '';
+      }
+      $this->validatorSchema[$fieldName] = new mmValidatorReadOnly(array(
+        'value'   => $value,
+      ));
     }
   }
 
@@ -131,7 +125,7 @@ class mmReadOnlyBaseForm extends sfFormSymfony
     {
       throw new InvalidArgumentException(__FUNCTION__ . ': Invalid Argument type. Expected String, got ' . gettype($fieldName));
     }
-    $this->_readOnlyFields[] = $fieldName;
+    $this->_handleReadOnlyFields($fieldName);
   }
 
   /**
@@ -144,7 +138,7 @@ class mmReadOnlyBaseForm extends sfFormSymfony
   {
     foreach($fields as $fieldName)
     {
-      $this->_readOnlyFields[] = $fieldName;
+      $this->_handleReadOnlyFields($fieldName);
     }
   }
 
@@ -206,7 +200,7 @@ class mmReadOnlyBaseForm extends sfFormSymfony
     {
       foreach($this->widgetSchema->getFields() as $fieldName => $w)
       {
-        $this->_readOnlyFields[] = $fieldName;
+        $this->_handleReadOnlyFields($fieldName);
       }
     }
 
